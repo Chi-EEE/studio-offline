@@ -30,27 +30,34 @@ extern "system" fn DllMain(_hmod: HMODULE, reason: u32, _reserved: *mut std::ffi
             || std::env::args().any(|arg| arg == "--offline"))
     {
         unsafe {
-            let _ = AllocConsole();
-            let mut f = std::ptr::null_mut();
-            let stdin_file = __acrt_iob_func(0);
-            let stdout_file = __acrt_iob_func(1);
-            let _ = freopen_s(
-                &mut f,
-                c"CONIN$".as_ptr() as _,
-                c"r".as_ptr() as _,
-                stdin_file,
-            );
-            let _ = freopen_s(
-                &mut f,
-                c"CONOUT$".as_ptr() as _,
-                c"w".as_ptr() as _,
-                stdout_file,
-            );
+            let background = std::env::var("RML_BACKGROUND_TESTS").as_deref() == Ok("1");
+            if !background {
+                let _ = AllocConsole();
+            }
+            if !background {
+                let mut f = std::ptr::null_mut();
+                let stdin_file = __acrt_iob_func(0);
+                let stdout_file = __acrt_iob_func(1);
+                let _ = freopen_s(
+                    &mut f,
+                    c"CONIN$".as_ptr() as _,
+                    c"r".as_ptr() as _,
+                    stdin_file,
+                );
+                let _ = freopen_s(
+                    &mut f,
+                    c"CONOUT$".as_ptr() as _,
+                    c"w".as_ptr() as _,
+                    stdout_file,
+                );
+            }
             println!("Starting Studio-Offline");
 
             MH_Initialize();
 
-            if let Some(addr) = scanner::aob_scan(patterns::URL_ONCOMPONENT) {
+            if let Some(addr) = scanner::aob_scan(patterns::URL_ONCOMPONENT_0741)
+                .or_else(|| scanner::aob_scan(patterns::URL_ONCOMPONENT))
+            {
                 MH_CreateHook(
                     addr as _,
                     hooks::hook_test as _,
@@ -60,7 +67,20 @@ extern "system" fn DllMain(_hmod: HMODULE, reason: u32, _reserved: *mut std::ffi
                 println!("FromComponents: 0x{addr:x}");
             }
 
-            if let Some(trustcheck_addr) = scanner::aob_scan(patterns::TRUSTCHECK) {
+            if let Some(addr) = scanner::aob_scan(patterns::URL_FROM_STRING) {
+                if MH_CreateHook(
+                    addr as _,
+                    hooks::parse_url_hook as _,
+                    &raw mut hooks::ORIGINAL_FROM_STRING as *mut _ as *mut _,
+                ) == 0
+                {
+                    MH_EnableHook(addr as _);
+                }
+            }
+
+            if let Some(trustcheck_addr) = scanner::aob_scan(patterns::TRUSTCHECK_0741)
+                .or_else(|| scanner::aob_scan(patterns::TRUSTCHECK))
+            {
                 MH_CreateHook(
                     trustcheck_addr as _,
                     hooks::trustcheck_hook as _,

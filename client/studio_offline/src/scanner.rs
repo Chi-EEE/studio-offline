@@ -23,6 +23,9 @@ pub unsafe fn get_module_info(module_name: &str) -> Option<(usize, usize)> {
 
 pub fn aob_scan(pattern_data: (&[u8], &[u8])) -> Option<usize> {
     let (pattern, mask) = pattern_data;
+    if pattern.is_empty() || pattern.len() != mask.len() {
+        return None;
+    }
     unsafe {
         let (module_base, module_size) = get_module_info("RobloxStudioBeta.exe")?;
         let pattern_len = mask.len();
@@ -37,16 +40,19 @@ pub fn aob_scan(pattern_data: (&[u8], &[u8])) -> Option<usize> {
                 std::mem::size_of::<MEMORY_BASIC_INFORMATION>(),
             ) == 0
             {
+                i += page_info.RegionSize.max(4096);
+                continue;
+            }
+
+            if page_info.State != MEM_COMMIT
+                || (page_info.Protect.0 & (PAGE_NOACCESS.0 | PAGE_GUARD.0)) != 0
+            {
                 i += page_info.RegionSize;
                 continue;
             }
 
-            if page_info.State != MEM_COMMIT || page_info.Protect == PAGE_NOACCESS {
-                i += page_info.RegionSize;
-                continue;
-            }
-
-            for j in 0..page_info.RegionSize {
+            let region_end = (i + page_info.RegionSize).min(module_base + module_size);
+            for j in 0..(region_end - i).saturating_sub(pattern_len - 1) {
                 let mut found = true;
                 for k in 0..pattern_len {
                     let char_ptr = (i + j + k) as *const u8;

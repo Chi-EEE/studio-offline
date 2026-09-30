@@ -17,6 +17,16 @@ static mut GET_VERSION_STRING: Option<unsafe extern "system" fn(PCWSTR, *mut PWS
 extern "system" fn DllMain(_hmod: HMODULE, reason: u32, _reserved: *mut c_void) -> BOOL {
     if reason == DLL_PROCESS_ATTACH {
         unsafe {
+            // Install focus hooks before the offline client or RML can create UI.
+            if std::env::var("RML_BACKGROUND_TESTS").as_deref() == Ok("1") {
+                if LoadLibraryA(PCSTR(
+                    c"RobloxModLoader\\background_tests.dll".as_ptr() as *const u8
+                ))
+                .is_err()
+                {
+                    windows::Win32::System::Threading::ExitProcess(86);
+                }
+            }
             let _ = LoadLibraryA(PCSTR(c"studio_offline.dll".as_ptr() as *const u8));
 
             let lib = LoadLibraryA(PCSTR(c"WebView2LoaderOld.dll".as_ptr() as *const u8));

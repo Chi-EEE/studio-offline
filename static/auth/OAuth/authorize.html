@@ -95,6 +95,8 @@
             let name = params.get("state");
             window.location.href = "roblox-studio-auth:/?code=a&state=" + name;
         }
+        // Test-only offline authentication has no account choice or consent step.
+        redirectToRobloxStudio();
     </script>
 
 </body>

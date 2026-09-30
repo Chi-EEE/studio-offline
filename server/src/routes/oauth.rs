@@ -82,7 +82,7 @@ async fn generate_token() -> impl IntoResponse {
         "scope": "age:read credentials:read openid:read premium:read profile:read roles:read",
         "jti": jti,
         "nbf": epoch_time_now,
-        "exp": epoch_time_now,
+        "exp": epoch_time_now + 899,
         "iat": epoch_time_now,
         "iss": "https://apis.roblox.com/oauth/",
         "aud": "1"
@@ -97,7 +97,7 @@ async fn generate_token() -> impl IntoResponse {
         "profile": "https://www.roblox.com/users/1/profile",
         "picture":"http://localhost/headshot",
         "id": jti,
-        "nonce":"id-roblox","jti":jti,"nbf":epoch_time_now,"exp":epoch_time_now,"iat":epoch_time_now,"iss":"https://apis.roblox.com/oauth/","aud":"1"
+        "nonce":"id-roblox","jti":jti,"nbf":epoch_time_now,"exp":epoch_time_now + 899,"iat":epoch_time_now,"iss":"https://apis.roblox.com/oauth/","aud":"1"
     });
 
     let base64_url_encode =

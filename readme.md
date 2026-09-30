@@ -37,3 +37,32 @@ Report it to the issues page.
 ## Roadmap
 Planned features:
 1. Local DataStores
+
+## Unattended test integration
+
+The `studio-test-background` worktree adds noninteractive server startup:
+
+```sh
+cargo build --release -p studio_offline_server
+./target/release/studio_offline_server --mode reflection --port 28080
+```
+
+Modes are `regular`, `reflection`, and `grab`. Omitting `--mode` preserves the
+interactive selector. Non-default ports rewrite loopback URLs in static responses
+and asset redirects. The server binds only to 127.0.0.1.
+
+For test clients, set `STUDIO_OFFLINE_PORT=28080` and
+`RML_BACKGROUND_TESTS=1`. The WebView2 proxy loads
+`RobloxModLoader/background_tests.dll` before the offline client, and the offline
+client does not allocate a console in this mode. That early DLL is provided by
+`../roblox-modloader-tests/examples/background_tests`. If it cannot load, the test
+process exits rather than continuing visibly.
+
+The local OAuth authorization page completes automatically and generated tokens
+have a valid 899-second lifetime. API URL hooks include signatures checked against
+Studio 0.741.19.7411056. They preserve non-Roblox URLs, including localhost test
+bridges, and use temporary string views without modifying caller-owned inputs.
+
+The game worktree's `scripts/test/setup-studio-tests.py` builds both Windows DLLs
+from Linux using LLVM-MinGW, installs them into a test-only Studio copy, and owns
+the server/Wine lifecycle for each test run. No admin privileges are required.
