@@ -40,7 +40,7 @@ Planned features:
 
 ## Unattended test integration
 
-The `studio-test-background` worktree adds noninteractive server startup:
+The test integration supports noninteractive server startup:
 
 ```sh
 cargo build --release -p studio_offline_server
@@ -55,7 +55,7 @@ For test clients, set `STUDIO_OFFLINE_PORT=28080` and
 `RML_BACKGROUND_TESTS=1`. The WebView2 proxy loads
 `RobloxModLoader/background_tests.dll` before the offline client, and the offline
 client does not allocate a console in this mode. That early DLL is provided by
-`../roblox-modloader-tests/examples/background_tests`. If it cannot load, the test
+`../roblox-modloader/examples/background_tests`. If it cannot load, the test
 process exits rather than continuing visibly.
 
 The local OAuth authorization page completes automatically and generated tokens
@@ -63,6 +63,8 @@ have a valid 899-second lifetime. API URL hooks include signatures checked again
 Studio 0.741.19.7411056. They preserve non-Roblox URLs, including localhost test
 bridges, and use temporary string views without modifying caller-owned inputs.
 
-The game worktree's `scripts/test/setup-studio-tests.py` builds both Windows DLLs
-from Linux using LLVM-MinGW, installs them into a test-only Studio copy, and owns
-the server/Wine lifecycle for each test run. No admin privileges are required.
+The game's `scripts/test/setup-studio-tests.py` builds the server and Windows DLLs
+natively with MSVC on Windows, or with LLVM-MinGW on Linux. It installs them into
+a test-only Studio copy. The game owns the server and Studio/Wine lifecycle for
+each test run. Windows tests redirect LocalAppData and Documents through the early
+background DLL so their plugins use a separate test profile.
