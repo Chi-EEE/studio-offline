@@ -36,11 +36,13 @@ pub extern "C" fn hook_test(
         }
         let bytes = std::slice::from_raw_parts(view.data, view.len);
         let original_host = std::str::from_utf8(bytes).unwrap_or("");
-        if !(original_host == "roblox.com" || original_host.ends_with(".roblox.com")) {
-            return original(res, schema, host, path, query, fragment);
-        }
         let port = std::env::var("STUDIO_OFFLINE_PORT").unwrap_or_else(|_| "80".to_owned());
         let local = format!("localhost:{port}");
+        // Studio also rebuilds URLs from an already rewritten host with an https scheme
+        // (e.g. /asset/?id=); the local server only speaks http, so pin those too.
+        if !(original_host == "roblox.com" || original_host.ends_with(".roblox.com") || original_host == local) {
+            return original(res, schema, host, path, query, fragment);
+        }
         // Use local views, never change shared input strings owned by the caller.
         let new_host = StringView {
             data: local.as_ptr(),
@@ -108,11 +110,12 @@ pub extern "C" fn parse_url_hook(
             if let Some((scheme, rest)) = url.split_once("://") {
                 let host_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
                 let host = &rest[..host_end];
+                let port =
+                    std::env::var("STUDIO_OFFLINE_PORT").unwrap_or_else(|_| "80".to_owned());
                 if (scheme == "http" || scheme == "https")
                     && (host == "roblox.com" || host.ends_with(".roblox.com"))
+                    || scheme == "https" && host == format!("localhost:{port}")
                 {
-                    let port =
-                        std::env::var("STUDIO_OFFLINE_PORT").unwrap_or_else(|_| "80".to_owned());
                     let local = format!("http://localhost:{port}{}", &rest[host_end..]);
                     let replacement = StringView {
                         data: local.as_ptr(),

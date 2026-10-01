@@ -116,6 +116,9 @@ async fn generate_token() -> impl IntoResponse {
     );
     token_response["access_token"] = Value::String(access_token.clone());
     token_response["id_token"] = id_token.into();
+    // Studio saves this and child processes (team test server/clients) log in with it.
+    // Without it they wait on the login page; this endpoint also serves the refresh grant.
+    token_response["refresh_token"] = Value::String("offline-refresh-token".to_owned());
     let mut response = Json(token_response).into_response();
     response.headers_mut().insert("set-cookie", HeaderValue::from_str(".ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|offline; domain=localhost; expires=Tue, 16-Nov-2055 02:58:32 GMT; path=/; Secure; SameSite=Lax; HttpOnly").unwrap());
     response

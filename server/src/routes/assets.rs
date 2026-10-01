@@ -64,6 +64,9 @@ pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/v1/asset", get(handle_asset_by_query))
         .route("/v1/asset/", get(handle_asset_by_query))
+        // Legacy www.roblox.com/asset/?id= content URLs (e.g. rbxassetid images).
+        .route("/asset", get(handle_asset_by_query))
+        .route("/asset/", get(handle_asset_by_query))
         .route("/ddl/{id}", get(handle_asset_by_path))
         .route("/v1/assets/batch", post(handle_assets_batch))
         .route("/v1/assets/batch/", post(handle_assets_batch))
